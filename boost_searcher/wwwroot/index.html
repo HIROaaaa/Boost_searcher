@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://www.tenpay.com/v4/static/js/jquery-1.9.1.min.js"></script>
+    
+    <title>boost 搜索引擎</title>
+    <style>
+        /* 去掉网页中所以的默认内外边距 */
+        *{
+            /* 设置外边距 */
+            margin: 0;
+            /* 设置内边距 */
+            padding: 0;
+        }
+        /* 将body内容100%和html的呈现吻合 */
+        html,
+        body{
+            height: 100%;
+        }
+        /* 类选择器.container */
+        .container{
+            display: block;
+            /* 设置div的宽度 */
+            width: 800px;
+            /* 通过设置外边距达到居中对齐的目的 */
+            margin: 0px auto;
+            /* 设置外边距的上边距，保持元素和网页的上部距离 */
+            margin-top: 15px;
+        }
+        /* 复合选择器，选中container中的search */
+        .container .search{
+            display: block;
+            /* 宽度与父标签保持一致 */
+            width: 100%;
+            /* 高度设置为52px（像素点） */
+            height: 52px;
+        }
+        /* 先选中input标签,直接设置标签的属性，先要选中，input：标签选择器 */
+        /* input在进行高度设置的时候没有考虑边框的问题 */
+        .container .search input{
+            display: block;
+            float: left;
+            width: 600px;
+            height: 50px;
+            /* 设置边框属性：边框宽度，样式，颜色 */
+            border:1px solid black;
+            /* 去掉右边框 */
+            border-right: none;
+            /* 设置内边距 */
+            padding-left: 10px;
+            /* 设置字的颜色和大小 */
+            color: #000;
+            font-size: 18px;
+            font-family: Georgia, 'Times New Roman', Times, serif;
+        }
+        .container .search input::placeholder{
+            color: #ccc;
+        }
+        .container .search input::-webkit-input-placeholder{
+            color: #ccc;
+        }
+        .container .search input::-moz-placeholder{
+            color: #ccc;
+        }
+        /* 先选中button标签,直接设置标签的属性，先要选中，input：标签选择器 */
+        .container .search button{
+            display: block;
+            float: left;
+            width: 150px;
+            height: 52px;
+            /* 设置button的背景颜色，#4e6ef2 */
+            background-color: #4e6ef2;
+            border:1px solid #4e6ef2;
+            /* 设置字体颜色 */
+            color: #FFF;
+            /* 设置字体大小 */
+            font-size: 19px;
+            font-family: Georgia, 'Times New Roman', Times, serif;
+        }
+        .container .result{
+            width: 100%;
+        }
+        .container .result .item{
+            margin-top: 15px;
+            position: relative;
+        }
+        .container .result .item a{
+            /* 设为块级元素（单独占一行） */
+            display: block;
+            /* 去下划线 */
+            text-decoration: none;
+            font-size: 25px;
+            color:green;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .container .result .item a:hover{
+            text-decoration: underline;
+        }
+        .container .result .item p{
+            margin-top: 6px;
+            font-size: 17px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .container .result .item i{
+            display: block;
+            color: #4e6ef2;
+            font-size: 17px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        /* ===== AI 悬浮提示 ===== */
+        .ai-tooltip{
+            display: none;
+            position: absolute;
+            top: -5px;
+            left: 105%;
+            max-width: 350px;
+            min-width: 200px;
+            background: #2d2d2d;
+            color: #f0f0f0;
+            font-size: 13px;
+            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+            padding: 10px 14px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 999;
+            line-height: 1.6;
+            word-break: break-word;
+            white-space: normal;
+        }
+        .ai-tooltip::before{
+            content: '';
+            position: absolute;
+            top: 12px;
+            left: -8px;
+            border: 8px solid transparent;
+            border-right-color: #2d2d2d;
+            border-left: 0;
+        }
+        .ai-tooltip.loading{
+            color: #aaa;
+        }
+        .ai-tooltip.loading::after{
+            content: '...';
+            animation: dots 1.2s infinite;
+        }
+        @keyframes dots{
+            0% { content: ''; }
+            33% { content: '.'; }
+            66% { content: '..'; }
+            100% { content: '...'; }
+        }
+        .item:hover .ai-tooltip{
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+     <div class="search">
+        <input type="text" placeholder="输入搜索关键字">
+        <button onclick="Search()">搜索一下</button>
+     </div>
+     <div class="result">
+        <div class="item">
+            <!-- 动态生成网页内容 -->
+     </div>
+    </div>
+    <script>
+        // 回车键触发搜索
+        $(".container .search input").keydown(function(e){
+            // e.keyCode === 13 代表按下回车键
+            if(e.keyCode === 13){
+             Search();
+         }
+        });
+        
+        function Search(){
+            // alert("hello js");
+            // $就是JQuery的别称
+            let query =$(".container .search input").val();
+            console.log("query = "+ query);
+
+            //2.发起http请求
+            $.ajax({
+                type: "GET",
+                url:"/s?word=" + query,
+                success: function(data){
+                    console.log(data);
+                    BuildHtml(data);
+                }
+            });
+        }
+
+        function BuildHtml(data){
+            // 获取html中的reslut标签
+            let result_lable = $(".container .result");
+            // 清空历史搜索结果
+            result_lable.empty();
+
+            // data为null/undefined 或者不是数组，直接终止循环
+            if(data === null || data === undefined || !Array.isArray(data)){
+                return;
+            }
+
+            for(let elem of data){
+                // console.log(elem.title);
+                // console.log(elem.url);
+                let a_lable = $("<a>",{
+                    text: elem.title,
+                    href: elem.url,
+                    // 跳转到新的页面
+                    target:"_blank"
+                });
+                let p_lable = $("<p>",{
+                    text: elem.desc
+                });
+                let i_lable = $("<i>",{
+                    text: elem.url
+                });
+                let div_lable = $("<div>",{
+                    class:"item"
+                });
+
+                // ===== AI 悬浮提示框 =====
+                let tooltip = $("<span>",{
+                    class: "ai-tooltip loading",
+                    text: "AI 分析中"
+                });
+                tooltip.attr("data-func", elem.title);
+
+                a_lable.appendTo(div_lable);
+                p_lable.appendTo(div_lable);
+                i_lable.appendTo(div_lable);
+                tooltip.appendTo(div_lable);
+                div_lable.appendTo(result_lable);
+            }
+        }
+
+        // ===== 鼠标悬停触发 AI 总结 =====
+        $(document).on("mouseenter", ".container .result .item", function(){
+            let tooltip = $(this).find(".ai-tooltip");
+            let func_name = tooltip.attr("data-func");
+
+            // 已加载过，不重复请求
+            if(tooltip.attr("data-loaded") === "1") return;
+
+            $.ajax({
+                type: "GET",
+                url: "/ai_summary?func=" + encodeURIComponent(func_name),
+                success: function(data){
+                    if(data && data.summary){
+                        tooltip.removeClass("loading");
+                        // 处理可能带 \n 的文本
+                        tooltip.html(data.summary.replace(/\n/g, "<br>"));
+                        tooltip.attr("data-loaded", "1");
+                    }else{
+                        tooltip.removeClass("loading");
+                        tooltip.text("暂无总结");
+                    }
+                },
+                error: function(){
+                    tooltip.removeClass("loading");
+                    tooltip.text("AI 服务不可用");
+                }
+            });
+        });
+    </script>
+</body>
+</html>
